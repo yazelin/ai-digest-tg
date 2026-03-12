@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "InviteCode",
+  "type": "object",
+  "required": ["created_by", "created_at"],
+  "properties": {
+    "created_by": { "type": "string" },
+    "used_by": { "type": ["integer", "null"] },
+    "created_at": { "type": "string", "format": "date-time" }
+  }
+}

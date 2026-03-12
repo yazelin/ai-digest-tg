@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UserSettings",
+  "type": "object",
+  "required": ["telegram_id", "target_type", "topics", "time_slot", "lang", "style", "invite_code", "created_at", "active"],
+  "properties": {
+    "telegram_id": { "type": "integer" },
+    "target_type": { "enum": ["dm", "chat"] },
+    "target_id": { "type": "string" },
+    "topics": {
+      "type": "array",
+      "items": {
+        "enum": ["llm", "ai-safety", "ai-agents", "open-source", "computer-vision", "robotics", "ai-coding", "ai-policy", "industry", "research"]
+      },
+      "maxItems": 5
+    },
+    "time_slot": { "enum": [0, 3, 6, 9, 12, 15, 18, 21] },
+    "lang": { "enum": ["zh-TW", "en"] },
+    "style": { "enum": ["mixed", "brief", "deep"] },
+    "custom_sources": {
+      "type": "array",
+      "items": { "type": "string", "format": "uri" },
+      "maxItems": 5,
+      "default": []
+    },
+    "invite_code": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "active": { "type": "boolean" },
+    "consecutive_failures": { "type": "integer", "default": 0 }
+  }
+}
