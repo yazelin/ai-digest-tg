@@ -62,6 +62,35 @@ def build_prompt(
 _MAX_ARTICLES_FOR_PROMPT = 50
 
 
+def _balance_by_source(articles: list[Article], limit: int) -> list[Article]:
+    """Select articles balanced across sources, taking newest first per source."""
+    from collections import defaultdict
+
+    by_source: dict[str, list[Article]] = defaultdict(list)
+    for a in articles:
+        by_source[a.source].append(a)
+
+    sources = list(by_source.keys())
+    if not sources:
+        return []
+
+    # Round-robin: take one from each source at a time until we hit the limit
+    result: list[Article] = []
+    idx = {s: 0 for s in sources}
+    while len(result) < limit:
+        added = False
+        for s in sources:
+            if idx[s] < len(by_source[s]):
+                result.append(by_source[s][idx[s]])
+                idx[s] += 1
+                added = True
+                if len(result) >= limit:
+                    break
+        if not added:
+            break
+    return result
+
+
 def call_copilot_cli(prompt: str) -> str:
     """Call GitHub Copilot CLI via stdin pipe and return the response."""
     try:
@@ -126,8 +155,8 @@ def summarize_articles(
     style: str = "mixed",
 ) -> DigestResult:
     """Full summarization pipeline: build prompt -> call AI -> parse response."""
-    # Limit articles to avoid exceeding prompt size limits
-    articles = articles[:_MAX_ARTICLES_FOR_PROMPT]
+    # Balance articles across sources so no single source dominates
+    articles = _balance_by_source(articles, _MAX_ARTICLES_FOR_PROMPT)
     prompt = build_prompt(articles, topics=topics, lang=lang, style=style)
     response = call_copilot_cli(prompt)
     return parse_digest_response(response)
