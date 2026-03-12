@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from typing import Optional
 
 import json
@@ -15,36 +15,28 @@ from sources import fetch_all_sources, url_hash, Article
 from summarize import summarize_articles, DigestResult, format_telegram_message
 from send_telegram import send_message, split_message
 
-# UTC+8 timezone
-_TZ_UTC8 = timezone(timedelta(hours=8))
-
-# Slot definitions: name -> (start_hour_utc8, end_hour_utc8)
-# Delivery slots roughly align with morning/midday/evening in UTC+8
-_SLOTS: dict[str, tuple[int, int]] = {
-    "morning": (7, 10),
-    "midday": (11, 14),
-    "afternoon": (15, 18),
-    "evening": (19, 22),
-    "night": (23, 2),  # wraps midnight
-}
+# Valid time slots (UTC hours) matching worker/src/types.ts
+_VALID_TIME_SLOTS = [0, 3, 6, 9, 12, 15, 18, 21]
 
 _MAX_CONSECUTIVE_FAILURES = 5
 _CF_KV_BASE = "https://api.cloudflare.com/client/v4/accounts/{account_id}/storage/kv/namespaces/{namespace_id}"
 
 
-def get_current_slot() -> str:
-    """Determine the current delivery slot from UTC+8 time."""
-    now_utc8 = datetime.now(_TZ_UTC8)
-    hour = now_utc8.hour
-    for slot_name, (start, end) in _SLOTS.items():
-        if start <= end:
-            if start <= hour < end:
-                return slot_name
-        else:
-            # Wraps midnight
-            if hour >= start or hour < end:
-                return slot_name
-    return "morning"
+def get_current_slot() -> int:
+    """Return the current time slot as UTC hour (0,3,6,...,21).
+
+    Cron runs at these UTC hours. We round the current UTC hour to the
+    nearest valid slot so that minor scheduling delays still match.
+    """
+    utc_hour = datetime.now(timezone.utc).hour
+    best = _VALID_TIME_SLOTS[0]
+    best_dist = abs(utc_hour - best)
+    for slot in _VALID_TIME_SLOTS:
+        dist = abs(utc_hour - slot)
+        if dist < best_dist:
+            best = slot
+            best_dist = dist
+    return best
 
 
 def _cf_headers() -> dict[str, str]:
@@ -122,23 +114,23 @@ def read_kv_users() -> list[dict]:
 
 def update_kv_user(user: dict) -> bool:
     """Update a user record in Cloudflare KV."""
-    chat_id = user.get("chatId") or user.get("chat_id", "")
-    if not chat_id:
+    tid = user.get("telegram_id", "")
+    if not tid:
         return False
-    key = f"user:{chat_id}"
+    key = f"user:{tid}"
     base = _kv_base_url()
     headers = _cf_headers()
     try:
         resp = requests.put(
             f"{base}/values/{key}",
             headers=headers,
-            json=user,
+            data=json.dumps(user),
             timeout=10,
         )
         resp.raise_for_status()
         return True
     except Exception as exc:
-        print(f"[kv] Failed to update user {chat_id}: {exc}")
+        print(f"[kv] Failed to update user {tid}: {exc}")
         return False
 
 
@@ -154,9 +146,8 @@ def notify_admin(message: str) -> None:
 
 def main() -> None:
     slot = get_current_slot()
-    now_utc8 = datetime.now(_TZ_UTC8)
-    today = now_utc8.strftime("%Y-%m-%d")
-    print(f"[pipeline] Starting digest for slot={slot}, date={today}")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    print(f"[pipeline] Starting digest for slot={slot} (UTC), date={today}")
 
     # Read users from KV
     try:
@@ -165,10 +156,10 @@ def main() -> None:
         notify_admin(f"Failed to read KV users: {exc}")
         sys.exit(1)
 
-    # Filter: active users whose slot matches
+    # Filter: active users whose time_slot matches current slot
     target_users = [
         u for u in all_users
-        if u.get("active", True) and u.get("slot", "morning") == slot
+        if u.get("active", True) and u.get("time_slot") == slot
     ]
 
     if not target_users:
@@ -178,11 +169,13 @@ def main() -> None:
     print(f"[pipeline] {len(target_users)} user(s) to deliver to.")
 
     # Collect unique (topics, lang) combos to minimise AI calls
+    # topics is a list in KV, convert to comma-separated string for AI prompt
     combos: dict[tuple[str, str], DigestResult] = {}
     combo_keys: set[tuple[str, str]] = set()
     for user in target_users:
-        topics = user.get("topics", "AI, machine learning")
-        lang = user.get("lang", "English")
+        topics_list = user.get("topics", ["llm", "ai-agents"])
+        topics = ",".join(topics_list) if isinstance(topics_list, list) else str(topics_list)
+        lang = user.get("lang", "en")
         combo_keys.add((topics, lang))
 
     # Fetch sources once
@@ -214,39 +207,47 @@ def main() -> None:
 
     # Deliver per user
     for user in target_users:
-        chat_id = str(user.get("chatId") or user.get("chat_id", ""))
-        topics = user.get("topics", "AI, machine learning")
-        lang = user.get("lang", "English")
+        tid = str(user.get("telegram_id", ""))
+        # Determine delivery target: DM or specific chat
+        target_type = user.get("target_type", "dm")
+        if target_type == "chat" and user.get("target_id"):
+            deliver_to = str(user["target_id"])
+        else:
+            deliver_to = tid
+
+        topics_list = user.get("topics", ["llm", "ai-agents"])
+        topics = ",".join(topics_list) if isinstance(topics_list, list) else str(topics_list)
+        lang = user.get("lang", "en")
         style = user.get("style", "mixed")
 
         digest = combos.get((topics, lang))
         if digest is None:
-            print(f"[pipeline] No digest for user {chat_id}, skipping.")
+            print(f"[pipeline] No digest for user {tid}, skipping.")
             continue
 
         message = format_telegram_message(digest, today, style)
         if not message:
-            print(f"[pipeline] Empty digest for user {chat_id}, skipping.")
+            print(f"[pipeline] Empty digest for user {tid}, skipping.")
             continue
 
         parts = split_message(message)
         success = True
         for part in parts:
-            if not send_message(bot_token, chat_id, part):
+            if not send_message(bot_token, deliver_to, part):
                 success = False
                 break
 
         if success:
-            user["consecutiveFailures"] = 0
-            print(f"[pipeline] Delivered to {chat_id}")
+            user["consecutive_failures"] = 0
+            print(f"[pipeline] Delivered to {deliver_to}")
         else:
-            failures = user.get("consecutiveFailures", 0) + 1
-            user["consecutiveFailures"] = failures
-            print(f"[pipeline] Delivery failed for {chat_id} (failures={failures})")
+            failures = user.get("consecutive_failures", 0) + 1
+            user["consecutive_failures"] = failures
+            print(f"[pipeline] Delivery failed for {deliver_to} (failures={failures})")
             if failures >= _MAX_CONSECUTIVE_FAILURES:
                 user["active"] = False
                 notify_admin(
-                    f"Deactivated user {chat_id} after {failures} consecutive failures."
+                    f"Deactivated user {tid} after {failures} consecutive failures."
                 )
 
         update_kv_user(user)
