@@ -4,6 +4,7 @@ on:
     - cron: '0 16,19,22 * * *'
     - cron: '0 1,4,7,10,13 * * *'
   workflow_dispatch:
+    inputs: {}
 permissions:
   contents: read
 concurrency:
