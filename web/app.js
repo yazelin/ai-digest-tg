@@ -1,6 +1,6 @@
 /* AI Digest TG — Settings Web UI */
 
-const API_BASE = "https://ai-digest-tg.YOUR_SUBDOMAIN.workers.dev";
+const API_BASE = "https://ai-digest-tg.yazelinj303.workers.dev";
 
 const TOPICS = [
   { value: "llm",             label: "LLM" },
