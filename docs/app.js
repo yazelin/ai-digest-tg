@@ -3,32 +3,38 @@
 const API_BASE = "https://ai-digest-tg.yazelinj303.workers.dev";
 
 const TOPICS = [
-  { value: "llm",             label: "LLM" },
-  { value: "ai-safety",       label: "AI Safety" },
-  { value: "ai-agents",       label: "AI Agents" },
-  { value: "open-source",     label: "Open Source" },
-  { value: "computer-vision", label: "Computer Vision" },
-  { value: "robotics",        label: "Robotics" },
-  { value: "ai-coding",       label: "AI Coding" },
-  { value: "ai-policy",       label: "AI Policy" },
-  { value: "industry",        label: "Industry" },
-  { value: "research",        label: "Research" },
+  { value: "llm",             zh: "大型語言模型", en: "LLM" },
+  { value: "ai-safety",       zh: "AI 安全",     en: "AI Safety" },
+  { value: "ai-agents",       zh: "AI 代理",     en: "AI Agents" },
+  { value: "open-source",     zh: "開源模型",     en: "Open Source" },
+  { value: "computer-vision", zh: "電腦視覺",     en: "Computer Vision" },
+  { value: "robotics",        zh: "機器人",       en: "Robotics" },
+  { value: "ai-coding",       zh: "AI 程式開發",  en: "AI Coding" },
+  { value: "ai-policy",       zh: "AI 政策法規",  en: "AI Policy" },
+  { value: "industry",        zh: "產業動態",     en: "Industry" },
+  { value: "research",        zh: "學術研究",     en: "Research" },
 ];
 
 const TIME_SLOTS = [
-  { value: 0,  label: "00:00 UTC" },
-  { value: 3,  label: "03:00 UTC" },
-  { value: 6,  label: "06:00 UTC" },
-  { value: 9,  label: "09:00 UTC" },
-  { value: 12, label: "12:00 UTC" },
-  { value: 15, label: "15:00 UTC" },
-  { value: 18, label: "18:00 UTC" },
-  { value: 21, label: "21:00 UTC" },
+  { value: 0,  utc: "00:00", tw: "08:00" },
+  { value: 3,  utc: "03:00", tw: "11:00" },
+  { value: 6,  utc: "06:00", tw: "14:00" },
+  { value: 9,  utc: "09:00", tw: "17:00" },
+  { value: 12, utc: "12:00", tw: "20:00" },
+  { value: 15, utc: "15:00", tw: "23:00" },
+  { value: 18, utc: "18:00", tw: "02:00" },
+  { value: 21, utc: "21:00", tw: "05:00" },
+];
+
+const STYLES = [
+  { value: "mixed", name: "綜合", desc: "3 篇重點摘要 + 3~5 條快訊，兼顧深度與廣度" },
+  { value: "brief", name: "快覽", desc: "5~10 條一行快訊，適合快速瀏覽" },
+  { value: "deep",  name: "深讀", desc: "3~5 篇深度分析，適合想深入了解的讀者" },
 ];
 
 let currentUser = null;
 
-/* ── DOM helpers ──────────────────────────────────────────── */
+/* ── DOM helpers ──────────────────────────────────────── */
 
 function $(id) { return document.getElementById(id); }
 
@@ -38,7 +44,7 @@ function setStatus(msg, type = "") {
   el.className = type;
 }
 
-/* ── Topics grid ──────────────────────────────────────────── */
+/* ── Topics grid ──────────────────────────────────────── */
 
 function buildTopicsGrid(selected = []) {
   const grid = $("topics-grid");
@@ -51,7 +57,10 @@ function buildTopicsGrid(selected = []) {
     chip.innerHTML = `
       <input type="checkbox" value="${t.value}" ${isChecked ? "checked" : ""}>
       <span class="checkmark"></span>
-      <span>${t.label}</span>
+      <span class="topic-label">
+        <span class="zh">${t.zh}</span>
+        <span class="en">${t.en}</span>
+      </span>
     `;
     chip.addEventListener("change", onTopicChange);
     grid.appendChild(chip);
@@ -83,7 +92,51 @@ function getSelectedTopics() {
     .map(c => c.dataset.value);
 }
 
-/* ── Radio chips (time slot / lang / style) ───────────────── */
+/* ── Time chips ───────────────────────────────────────── */
+
+function buildTimeChips(selectedValue) {
+  const container = $("time-chips");
+  container.innerHTML = "";
+  for (const slot of TIME_SLOTS) {
+    const label = document.createElement("label");
+    label.className = "time-chip" + (slot.value === selectedValue ? " selected" : "");
+    label.dataset.value = slot.value;
+    label.innerHTML = `
+      <input type="radio" name="time-chips" value="${slot.value}">
+      <span class="time-tw">${slot.tw}</span>
+      <span class="time-utc">UTC ${slot.utc}</span>
+    `;
+    label.addEventListener("change", () => {
+      container.querySelectorAll(".time-chip").forEach(c => c.classList.remove("selected"));
+      label.classList.add("selected");
+    });
+    container.appendChild(label);
+  }
+}
+
+/* ── Style cards ──────────────────────────────────────── */
+
+function buildStyleCards(selectedValue) {
+  const container = $("style-chips");
+  container.innerHTML = "";
+  for (const s of STYLES) {
+    const card = document.createElement("label");
+    card.className = "style-card" + (s.value === selectedValue ? " selected" : "");
+    card.dataset.value = s.value;
+    card.innerHTML = `
+      <input type="radio" name="style-chips" value="${s.value}">
+      <div class="style-name">${s.name}</div>
+      <div class="style-desc">${s.desc}</div>
+    `;
+    card.addEventListener("change", () => {
+      container.querySelectorAll(".style-card").forEach(c => c.classList.remove("selected"));
+      card.classList.add("selected");
+    });
+    container.appendChild(card);
+  }
+}
+
+/* ── Radio chips (lang) ───────────────────────────────── */
 
 function buildOptionChips(containerId, options, selectedValue) {
   const container = $(containerId);
@@ -93,39 +146,35 @@ function buildOptionChips(containerId, options, selectedValue) {
     label.className = "option-chip" + (opt.value === selectedValue ? " selected" : "");
     label.dataset.value = opt.value;
     label.innerHTML = `<input type="radio" name="${containerId}" value="${opt.value}">${opt.label}`;
-    label.addEventListener("change", (e) => {
+    label.addEventListener("change", () => {
       container.querySelectorAll(".option-chip").forEach(c => c.classList.remove("selected"));
-      e.currentTarget.classList.add("selected");
+      label.classList.add("selected");
     });
     container.appendChild(label);
   }
 }
 
 function getSelectedOption(containerId) {
-  const el = document.querySelector(`#${containerId} .option-chip.selected`);
+  const el = document.querySelector(`#${containerId} .option-chip.selected, #${containerId} .time-chip.selected, #${containerId} .style-card.selected`);
   return el ? el.dataset.value : null;
 }
 
-/* ── Populate form from UserSettings ─────────────────────── */
+/* ── Populate form from UserSettings ──────────────────── */
 
 function populateForm(user) {
   buildTopicsGrid(user.topics || []);
-  buildOptionChips("time-chips",  TIME_SLOTS,                   user.time_slot);
-  buildOptionChips("lang-chips",  [
-    { value: "zh-TW", label: "繁中 (zh-TW)" },
+  buildTimeChips(user.time_slot);
+  buildOptionChips("lang-chips", [
+    { value: "zh-TW", label: "繁體中文" },
     { value: "en",    label: "English" },
   ], user.lang || "en");
-  buildOptionChips("style-chips", [
-    { value: "mixed", label: "Mixed" },
-    { value: "brief", label: "Brief" },
-    { value: "deep",  label: "Deep" },
-  ], user.style || "mixed");
+  buildStyleCards(user.style || "mixed");
 }
 
-/* ── Auth ──────────────────────────────────────────────────── */
+/* ── Auth ──────────────────────────────────────────────── */
 
 window.onTelegramAuth = async function(loginData) {
-  setStatus("Verifying…");
+  setStatus("驗證中…");
   try {
     const res = await fetch(`${API_BASE}/api/auth`, {
       method: "POST",
@@ -133,19 +182,19 @@ window.onTelegramAuth = async function(loginData) {
       body: JSON.stringify(loginData),
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: "Auth failed" }));
-      setStatus(err.error || "Auth failed", "error");
+      const err = await res.json().catch(() => ({ error: "驗證失敗" }));
+      setStatus(err.error || "驗證失敗", "error");
       return;
     }
     const { user } = await res.json();
     if (!user) {
-      setStatus("Account not found. Please start the bot first via /start.", "error");
+      setStatus("找不到帳號。請先在 Telegram 上向 Bot 發送 /start 邀請碼 完成註冊。", "error");
       return;
     }
     currentUser = user;
     showSettings(loginData);
   } catch (err) {
-    setStatus("Network error: " + err.message, "error");
+    setStatus("網路錯誤：" + err.message, "error");
   }
 };
 
@@ -167,14 +216,14 @@ function logout() {
   setStatus("");
 }
 
-/* ── Save ──────────────────────────────────────────────────── */
+/* ── Save ──────────────────────────────────────────────── */
 
 async function saveSettings() {
   if (!currentUser) return;
 
   const topics = getSelectedTopics();
   if (topics.length === 0) {
-    setStatus("Please select at least one topic.", "error");
+    setStatus("請至少選擇一個主題。", "error");
     return;
   }
 
@@ -183,7 +232,7 @@ async function saveSettings() {
   const style = getSelectedOption("style-chips");
 
   if (timeSlotRaw === null || lang === null || style === null) {
-    setStatus("Please complete all selections.", "error");
+    setStatus("請完成所有選項。", "error");
     return;
   }
 
@@ -197,7 +246,7 @@ async function saveSettings() {
 
   const btn = $("save-btn");
   btn.disabled = true;
-  setStatus("Saving…");
+  setStatus("儲存中…");
 
   try {
     const res = await fetch(`${API_BASE}/api/settings`, {
@@ -207,20 +256,20 @@ async function saveSettings() {
     });
     if (!res.ok) {
       const text = await res.text();
-      setStatus("Save failed: " + text, "error");
+      setStatus("儲存失敗：" + text, "error");
       return;
     }
     currentUser = await res.json();
-    setStatus("Settings saved!", "success");
+    setStatus("設定已儲存！", "success");
     setTimeout(() => setStatus(""), 3000);
   } catch (err) {
-    setStatus("Network error: " + err.message, "error");
+    setStatus("網路錯誤：" + err.message, "error");
   } finally {
     btn.disabled = false;
   }
 }
 
-/* ── Init ──────────────────────────────────────────────────── */
+/* ── Init ──────────────────────────────────────────────── */
 
 document.addEventListener("DOMContentLoaded", () => {
   $("save-btn").addEventListener("click", saveSettings);

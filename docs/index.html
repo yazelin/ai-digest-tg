@@ -1,76 +1,107 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Digest TG — Settings</title>
+  <title>AI Digest TG — 設定</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
+<div class="noise"></div>
+
 <header>
-  <h1>AI Digest TG</h1>
-  <p>Configure your personalised AI news digest</p>
+  <div class="logo">
+    <span class="logo-icon">AI</span>
+    <div>
+      <h1>Digest TG</h1>
+      <p class="tagline">你的個人化 AI 新聞摘要</p>
+    </div>
+  </div>
 </header>
 
-<!-- Auth -->
-<section id="auth-section">
-  <p>Sign in with Telegram to manage your settings</p>
-  <script
-    async
-    src="https://telegram.org/js/telegram-widget.js?22"
-    data-telegram-login="ai_digest_tg_bot"
-    data-size="large"
-    data-onauth="onTelegramAuth(user)"
-    data-request-access="write">
-  </script>
-</section>
+<main>
 
-<!-- Settings (hidden until authed) -->
-<section id="settings-section" class="hidden">
+  <!-- Auth -->
+  <section id="auth-section" class="auth-card">
+    <div class="auth-content">
+      <h2>開始使用</h2>
+      <p>使用 Telegram 帳號登入，即可在這裡管理你的訂閱設定。</p>
+      <p class="auth-note">首次使用？請先在 Telegram 上向 <strong>@ai_digest_tg_bot</strong> 發送 <code>/start 邀請碼</code> 完成註冊。</p>
+      <div class="tg-widget-wrap">
+        <script
+          async
+          src="https://telegram.org/js/telegram-widget.js?22"
+          data-telegram-login="ai_digest_tg_bot"
+          data-size="large"
+          data-onauth="onTelegramAuth(user)"
+          data-request-access="write">
+        </script>
+      </div>
+    </div>
+  </section>
 
-  <div id="user-info">
-    <div>Signed in as <span id="user-name"></span></div>
-    <button id="logout-btn">Sign out</button>
-  </div>
+  <!-- Settings (hidden until authed) -->
+  <section id="settings-section" class="hidden">
 
-  <!-- Topics -->
-  <div class="card">
-    <h2>Topics <small id="topic-count">0</small>/5</h2>
-    <p class="hint">Choose up to 5 topics for your digest</p>
-    <div class="topics-grid" id="topics-grid"></div>
-  </div>
+    <div id="user-info">
+      <div class="user-greeting">
+        <span class="wave">&#x1f44b;</span> <span id="user-name"></span>
+      </div>
+      <button id="logout-btn">登出</button>
+    </div>
 
-  <!-- Delivery time -->
-  <div class="card">
-    <h2>Delivery Time</h2>
-    <p class="hint">When would you like to receive your digest? (UTC)</p>
-    <div class="options-row" id="time-chips"></div>
-  </div>
+    <!-- Topics -->
+    <div class="card">
+      <div class="card-header">
+        <h2>訂閱主題</h2>
+        <span class="badge" id="topic-count">0</span><span class="badge-label">/5</span>
+      </div>
+      <p class="hint">選擇你感興趣的 AI 領域，系統會根據主題篩選相關新聞（最多 5 個）。</p>
+      <div class="topics-grid" id="topics-grid"></div>
+    </div>
 
-  <!-- Language -->
-  <div class="card">
-    <h2>Language</h2>
-    <p class="hint">Digest summary language</p>
-    <div class="options-row" id="lang-chips"></div>
-  </div>
+    <!-- Delivery time -->
+    <div class="card">
+      <div class="card-header">
+        <h2>投遞時間</h2>
+      </div>
+      <p class="hint">每天在指定時段收到一次摘要推送。下方同時顯示 UTC 與台灣時間（UTC+8）。</p>
+      <div class="time-grid" id="time-chips"></div>
+    </div>
 
-  <!-- Style -->
-  <div class="card">
-    <h2>Style</h2>
-    <p class="hint">
-      <strong>Mixed</strong> — balanced depth &amp; breadth ·
-      <strong>Brief</strong> — TL;DR only ·
-      <strong>Deep</strong> — detailed analysis
-    </p>
-    <div class="options-row" id="style-chips"></div>
-  </div>
+    <!-- Language -->
+    <div class="card">
+      <div class="card-header">
+        <h2>摘要語言</h2>
+      </div>
+      <p class="hint">AI 將以你選擇的語言撰寫新聞摘要。所有標題與內容都會翻譯。</p>
+      <div class="options-row" id="lang-chips"></div>
+    </div>
 
-  <!-- Save -->
-  <button id="save-btn">Save Settings</button>
-  <div id="status-msg"></div>
+    <!-- Style -->
+    <div class="card">
+      <div class="card-header">
+        <h2>摘要風格</h2>
+      </div>
+      <p class="hint">選擇你偏好的閱讀方式。</p>
+      <div class="style-cards" id="style-chips"></div>
+    </div>
 
-</section>
+    <!-- Save -->
+    <button id="save-btn">儲存設定</button>
+    <div id="status-msg"></div>
+
+  </section>
+
+</main>
+
+<footer>
+  <p>AI Digest TG &mdash; 由 GitHub Actions + Cloudflare Workers 驅動</p>
+</footer>
 
 <script src="app.js"></script>
 </body>
