@@ -6,7 +6,7 @@ import { checkRateLimit } from "./ratelimit";
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function requireUser(user: UserSettings | null): string | null {
-  if (!user) return "You are not registered. Use /start <invite_code> to get started.";
+  if (!user) return "You are not registered. Use /start invite_code to get started.";
   return null;
 }
 
@@ -29,7 +29,7 @@ export function roundToSlot(hour: number): TimeSlot {
 export async function handleStart(env: Env, telegramId: number, args: string): Promise<string> {
   const code = args.trim();
   if (!code) {
-    return "Please provide an invite code: /start <invite_code>";
+    return "Please provide an invite code: /start invite_code";
   }
 
   const allowed = await checkRateLimit(env.KV, `start:${telegramId}`, 3, 3600);
@@ -86,7 +86,7 @@ export async function handleTopics(env: Env, telegramId: number, args: string): 
   if (err) return err;
 
   if (!args.trim()) {
-    return `Your current topics: ${user!.topics.join(", ")}\n\nAvailable: ${VALID_TOPICS.join(", ")}\n\nUse /topics <topic1,topic2,...> to update.`;
+    return `Your current topics: ${user!.topics.join(", ")}\n\nAvailable: ${VALID_TOPICS.join(", ")}\n\nUse /topics topic1,topic2,... to update.`;
   }
 
   const requested = args.split(",").map(t => t.trim()).filter(Boolean);
@@ -111,7 +111,7 @@ export async function handleTime(env: Env, telegramId: number, args: string): Pr
   if (err) return err;
 
   if (!args.trim()) {
-    return `Your current delivery time: ${user!.time_slot}:00 UTC\n\nUse /time <hour> (0-23) to update.`;
+    return `Your current delivery time: ${user!.time_slot}:00 UTC\n\nUse /time hour (0-23) to update.`;
   }
 
   const hour = parseInt(args.trim(), 10);
@@ -134,7 +134,7 @@ export async function handleLang(env: Env, telegramId: number, args: string): Pr
 
   const lang = args.trim() as "en" | "zh-TW";
   if (!lang) {
-    return `Your current language: ${user!.lang}\n\nAvailable: en, zh-TW\n\nUse /lang <en|zh-TW> to update.`;
+    return `Your current language: ${user!.lang}\n\nAvailable: en, zh-TW\n\nUse /lang en or /lang zh-TW to update.`;
   }
   if (lang !== "en" && lang !== "zh-TW") {
     return "Invalid language. Available: en, zh-TW";
@@ -154,7 +154,7 @@ export async function handleStyle(env: Env, telegramId: number, args: string): P
 
   const style = args.trim() as "mixed" | "brief" | "deep";
   if (!style) {
-    return `Your current style: ${user!.style}\n\nAvailable: mixed, brief, deep\n\nUse /style <mixed|brief|deep> to update.`;
+    return `Your current style: ${user!.style}\n\nAvailable: mixed, brief, deep\n\nUse /style mixed, /style brief, or /style deep to update.`;
   }
   if (style !== "mixed" && style !== "brief" && style !== "deep") {
     return "Invalid style. Available: mixed, brief, deep";
@@ -215,13 +215,13 @@ export async function handleResume(env: Env, telegramId: number): Promise<string
 export async function handleHelp(): Promise<string> {
   return (
     "<b>AI Digest Commands</b>\n\n" +
-    "/start <code> - Register with invite code\n" +
+    "/start &lt;invite_code&gt; - Register with invite code\n" +
     "/topics [list] - View or set topics\n" +
-    "/time <hour> - Set delivery time (UTC)\n" +
-    "/lang <en|zh-TW> - Set language\n" +
-    "/style <mixed|brief|deep> - Set digest style\n" +
+    "/time &lt;hour&gt; - Set delivery time (UTC)\n" +
+    "/lang &lt;en|zh-TW&gt; - Set language\n" +
+    "/style &lt;mixed|brief|deep&gt; - Set digest style\n" +
     "/target dm|chat [chat_id] - Set delivery target\n" +
-    "/sources add <url>|remove <n> - Manage custom RSS\n" +
+    "/sources add &lt;url&gt;|remove &lt;n&gt; - Manage custom RSS\n" +
     "/status - Show your current settings\n" +
     "/stop - Pause digest delivery\n" +
     "/resume - Resume digest delivery\n" +
@@ -240,7 +240,7 @@ export async function handleTarget(env: Env, telegramId: number, args: string): 
   const targetType = parts[0] as "dm" | "chat";
 
   if (!targetType) {
-    return `Current target: ${user!.target_type}${user!.target_id ? ` (${user!.target_id})` : ""}\n\nUse /target dm or /target chat <chat_id>`;
+    return `Current target: ${user!.target_type}${user!.target_id ? ` (${user!.target_id})` : ""}\n\nUse /target dm or /target chat chat_id`;
   }
 
   if (targetType === "dm") {
@@ -253,7 +253,7 @@ export async function handleTarget(env: Env, telegramId: number, args: string): 
   if (targetType === "chat") {
     const chatId = parts[1];
     if (!chatId) {
-      return "Please provide a chat ID: /target chat <chat_id>";
+      return "Please provide a chat ID: /target chat chat_id";
     }
     user!.target_type = "chat";
     user!.target_id = chatId;
@@ -275,10 +275,10 @@ export async function handleSources(env: Env, telegramId: number, args: string):
 
   if (!args.trim()) {
     if (user!.custom_sources.length === 0) {
-      return "No custom sources added yet.\n\nUse /sources add <url> to add one.";
+      return "No custom sources added yet.\n\nUse /sources add url to add one.";
     }
     const list = user!.custom_sources.map((s, i) => `${i + 1}. ${s}`).join("\n");
-    return `Your custom sources:\n${list}\n\nUse /sources add <url> or /sources remove <number>`;
+    return `Your custom sources:\n${list}\n\nUse /sources add url or /sources remove number`;
   }
 
   const spaceIdx = args.indexOf(" ");
@@ -287,7 +287,7 @@ export async function handleSources(env: Env, telegramId: number, args: string):
 
   if (subCommand === "add") {
     const url = subArgs;
-    if (!url) return "Please provide a URL: /sources add <url>";
+    if (!url) return "Please provide a URL: /sources add url";
     if (user!.custom_sources.length >= MAX_CUSTOM_SOURCES) {
       return `You can have at most ${MAX_CUSTOM_SOURCES} custom sources. Remove one first.`;
     }
@@ -315,7 +315,7 @@ export async function handleSources(env: Env, telegramId: number, args: string):
     return `Removed source: ${removed}`;
   }
 
-  return "Unknown subcommand. Use: /sources add <url> or /sources remove <number>";
+  return "Unknown subcommand. Use: /sources add url or /sources remove number";
 }
 
 // ── admin commands ────────────────────────────────────────────────────────────
@@ -368,7 +368,7 @@ export async function handleAdminRevoke(env: Env, telegramId: number, args: stri
 
   const code = args.trim();
   if (!code) {
-    return "Please provide a code to revoke: /admin_revoke <code>";
+    return "Please provide a code to revoke: /admin_revoke code";
   }
 
   const invite = await getInvite(env.KV, code);

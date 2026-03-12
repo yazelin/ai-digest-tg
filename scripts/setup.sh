@@ -38,7 +38,7 @@ echo ""
 # ── Step 1: Create KV namespace ──────────────────────────────
 echo "[Step 1/8] Creating KV namespace..."
 
-KV_OUTPUT=$(cd "$WORKER_DIR" && wrangler kv namespace create KV 2>&1)
+KV_OUTPUT=$(cd "$WORKER_DIR" && wrangler kv namespace create KV 2>&1) || true
 echo "$KV_OUTPUT"
 
 # Extract namespace ID from output
@@ -50,9 +50,16 @@ if [ -z "$KV_ID" ]; then
 fi
 
 if [ -z "$KV_ID" ]; then
+  # Namespace may already exist — try to list and find it
+  KV_LIST=$(cd "$WORKER_DIR" && wrangler kv namespace list 2>&1) || true
+  KV_ID=$(echo "$KV_LIST" | grep -B2 -E '"(ai-digest-tg-KV|KV)"' | grep -oP '"[a-f0-9]{32}"' | head -1 | tr -d '"' || true)
+fi
+
+if [ -z "$KV_ID" ]; then
   echo ""
-  echo "Could not auto-detect namespace ID from output."
-  echo "Copy the ID shown above and paste it here:"
+  echo "Could not auto-detect namespace ID."
+  echo "Run: cd worker && wrangler kv namespace list"
+  echo "Find the ID for 'ai-digest-tg-KV' and paste it here:"
   read -r KV_ID
 fi
 
@@ -122,7 +129,7 @@ echo ""
 # ── Step 4: Deploy Worker ────────────────────────────────────
 echo "[Step 4/8] Deploying Cloudflare Worker..."
 
-DEPLOY_OUTPUT=$(cd "$WORKER_DIR" && wrangler deploy 2>&1)
+DEPLOY_OUTPUT=$(cd "$WORKER_DIR" && wrangler deploy 2>&1) || true
 echo "$DEPLOY_OUTPUT"
 
 # Extract worker URL
@@ -157,13 +164,13 @@ echo ""
 echo "[Step 6/8] Updating Web UI configuration..."
 
 # Update app.js API_BASE
-sed -i "s|https://ai-digest-tg.YOUR_SUBDOMAIN.workers.dev|${WORKER_URL}|" "$PROJECT_DIR/web/app.js"
+sed -i "s|https://ai-digest-tg.YOUR_SUBDOMAIN.workers.dev|${WORKER_URL}|" "$PROJECT_DIR/docs/app.js"
 
 # Update index.html bot username
-sed -i "s|YOUR_BOT_USERNAME|${BOT_USERNAME}|" "$PROJECT_DIR/web/index.html"
+sed -i "s|YOUR_BOT_USERNAME|${BOT_USERNAME}|" "$PROJECT_DIR/docs/index.html"
 
-echo "  Updated web/app.js API_BASE → $WORKER_URL"
-echo "  Updated web/index.html bot username → $BOT_USERNAME"
+echo "  Updated docs/app.js API_BASE → $WORKER_URL"
+echo "  Updated docs/index.html bot username → $BOT_USERNAME"
 echo ""
 
 # ── Step 7: Set GitHub Actions secrets ───────────────────────
@@ -222,7 +229,7 @@ echo ""
 echo "[Step 8/8] Committing configuration changes..."
 
 cd "$PROJECT_DIR"
-git add worker/wrangler.jsonc web/app.js web/index.html
+git add worker/wrangler.jsonc docs/app.js docs/index.html
 if git diff --cached --quiet; then
   echo "  No changes to commit."
 else

@@ -31,7 +31,9 @@ export async function sendMessage(
       link_preview_options: { is_disabled: true },
     }),
   });
-  if (resp.status === 429) return false;
-  const result = await resp.json() as { ok: boolean };
+  const result = await resp.json() as { ok: boolean; description?: string };
+  if (!result.ok) {
+    console.error("Telegram API error:", result);
+  }
   return result.ok;
 }
