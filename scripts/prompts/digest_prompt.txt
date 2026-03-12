@@ -13,7 +13,7 @@ Rules:
 - For "deep" style: Select 3-5 articles with detailed summaries
 - Each item MUST include the original source URL
 - Keep total output under 3800 characters
-- Write in the specified language
+- ALL text (titles, summaries, "why") MUST be written in {lang}. Translate from the original language if needed. Only URLs remain in English.
 - Focus on articles matching the given topics
 - If no articles match the topics, return EMPTY
 
