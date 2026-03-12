@@ -60,11 +60,16 @@ def build_prompt(
 
 
 def call_copilot_cli(prompt: str) -> str:
-    """Call GitHub Copilot CLI and return the response text."""
+    """Call GitHub Copilot CLI in non-interactive mode and return the response."""
     try:
         result = subprocess.run(
-            ["copilot", "cli", "--model", "gpt-5-mini"],
-            input=prompt,
+            [
+                "copilot",
+                "--model", "gpt-5-mini",
+                "-p", prompt,
+                "-s",
+                "--no-color",
+            ],
             capture_output=True,
             text=True,
             timeout=120,
@@ -77,7 +82,7 @@ def call_copilot_cli(prompt: str) -> str:
     except subprocess.TimeoutExpired:
         raise RuntimeError("copilot cli timed out after 120s")
     except FileNotFoundError:
-        raise RuntimeError("copilot cli not found; ensure GitHub Copilot CLI is installed")
+        raise RuntimeError("copilot cli not found; install with: npm i -g @github/copilot")
 
 
 def parse_digest_response(response: str) -> DigestResult:

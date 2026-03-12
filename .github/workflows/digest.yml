@@ -14,11 +14,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Install GitHub Copilot CLI
+        run: npm i -g @github/copilot
       - uses: astral-sh/setup-uv@v5
       - name: Install dependencies
         run: cd scripts && uv sync
       - name: Run digest pipeline
         env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CF_KV_NAMESPACE_ID: ${{ secrets.CF_KV_NAMESPACE_ID }}
