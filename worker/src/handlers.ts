@@ -1,6 +1,7 @@
 import type { Env, UserSettings, Topic, TimeSlot } from "./types";
 import { VALID_TOPICS, VALID_TIME_SLOTS } from "./types";
 import { getUser, putUser, getInvite, markInviteUsed, generateInviteCode, putInvite, listUsersBySlot } from "./kv";
+import { checkRateLimit } from "./ratelimit";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -30,6 +31,9 @@ export async function handleStart(env: Env, telegramId: number, args: string): P
   if (!code) {
     return "Please provide an invite code: /start <invite_code>";
   }
+
+  const allowed = await checkRateLimit(env.KV, `start:${telegramId}`, 3, 3600);
+  if (!allowed) return "Too many attempts. Please try again later.";
 
   const invite = await getInvite(env.KV, code);
   if (!invite) {

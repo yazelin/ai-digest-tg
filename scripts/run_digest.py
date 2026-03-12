@@ -7,9 +7,11 @@ import sys
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
+import json
+
 import requests
 
-from sources import fetch_all_sources, Article
+from sources import fetch_all_sources, url_hash, Article
 from summarize import summarize_articles, DigestResult, format_telegram_message
 from send_telegram import send_message, split_message
 
@@ -54,6 +56,37 @@ def _kv_base_url() -> str:
     account_id = os.environ["CF_ACCOUNT_ID"]
     namespace_id = os.environ["CF_KV_NAMESPACE_ID"]
     return _CF_KV_BASE.format(account_id=account_id, namespace_id=namespace_id)
+
+
+def read_kv_dedup(date: str) -> set[str]:
+    """Read dedup hashes for a given date from Cloudflare KV."""
+    base = _kv_base_url()
+    headers = _cf_headers()
+    try:
+        resp = requests.get(f"{base}/values/dedup:{date}", headers=headers, timeout=10)
+        if resp.ok:
+            try:
+                return set(resp.json())
+            except Exception:
+                return set()
+    except Exception as exc:
+        print(f"[kv] Failed to read dedup for {date}: {exc}")
+    return set()
+
+
+def write_kv_dedup(date: str, hashes: set[str]) -> None:
+    """Write dedup hashes for a given date to Cloudflare KV (TTL 48 h)."""
+    base = _kv_base_url()
+    headers = {**_cf_headers()}
+    try:
+        requests.put(
+            f"{base}/values/dedup:{date}?expiration_ttl=172800",
+            headers=headers,
+            data=json.dumps(list(hashes)),
+            timeout=10,
+        )
+    except Exception as exc:
+        print(f"[kv] Failed to write dedup for {date}: {exc}")
 
 
 def read_kv_users() -> list[dict]:
@@ -162,6 +195,11 @@ def main() -> None:
 
     print(f"[pipeline] Fetched {len(articles)} unique articles.")
 
+    # Cross-run deduplication: skip articles already sent today
+    sent_hashes = read_kv_dedup(today)
+    articles = [a for a in articles if url_hash(a.url) not in sent_hashes]
+    print(f"[pipeline] {len(articles)} articles after dedup filter.")
+
     # Summarize per unique (topics, lang)
     bot_token = os.environ["TELEGRAM_BOT_TOKEN"]
     for topics, lang in combo_keys:
@@ -212,6 +250,10 @@ def main() -> None:
                 )
 
         update_kv_user(user)
+
+    # Persist dedup hashes for articles that were processed this run
+    new_hashes = sent_hashes | {url_hash(a.url) for a in articles}
+    write_kv_dedup(today, new_hashes)
 
     print("[pipeline] Done.")
 
