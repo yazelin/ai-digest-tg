@@ -1,0 +1,229 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #f5f5f5;
+  --surface: #ffffff;
+  --primary: #0088cc;
+  --primary-hover: #006ba3;
+  --text: #1a1a1a;
+  --text-muted: #666666;
+  --border: #e0e0e0;
+  --chip-bg: #e8f4fd;
+  --chip-border: #b3d9f0;
+  --chip-checked-bg: #0088cc;
+  --chip-checked-text: #ffffff;
+  --radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 48px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+header p {
+  color: var(--text-muted);
+  margin-top: 6px;
+  font-size: 0.95rem;
+}
+
+#auth-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+#auth-section p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+#settings-section {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.card h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.card .hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+/* Topics grid */
+.topics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.topic-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--chip-border);
+  border-radius: 20px;
+  background: var(--chip-bg);
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  user-select: none;
+}
+
+.topic-chip input[type="checkbox"] {
+  display: none;
+}
+
+.topic-chip.checked {
+  background: var(--chip-checked-bg);
+  color: var(--chip-checked-text);
+  border-color: var(--chip-checked-bg);
+}
+
+.topic-chip.disabled:not(.checked) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.topic-chip .checkmark {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 10px;
+}
+
+.topic-chip.checked .checkmark::after {
+  content: "✓";
+}
+
+/* Radio-style options */
+.options-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.option-chip {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  user-select: none;
+}
+
+.option-chip input[type="radio"] {
+  display: none;
+}
+
+.option-chip.selected {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+/* Save button */
+#save-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#save-btn:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+#save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+#status-msg {
+  text-align: center;
+  font-size: 0.88rem;
+  min-height: 20px;
+  color: var(--text-muted);
+}
+
+#status-msg.success { color: #2e7d32; }
+#status-msg.error   { color: #c62828; }
+
+#user-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 0 4px;
+}
+
+#user-info span { font-weight: 600; color: var(--text); }
+
+#logout-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 2px 4px;
+}
+
+#logout-btn:hover { text-decoration: underline; }
+
+.hidden { display: none !important; }
