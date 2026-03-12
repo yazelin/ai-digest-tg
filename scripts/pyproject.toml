@@ -1,0 +1,13 @@
+[project]
+name = "ai-digest-tg-scripts"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "feedparser>=6.0",
+    "requests>=2.31",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0",
+]
