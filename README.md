@@ -18,9 +18,47 @@ Personalized AI news digest delivered to Telegram. Fetches articles from multipl
 - Custom RSS sources (up to 5)
 - Invite-code access control
 
+## Topics
+
+Users can subscribe to up to 5 topics. The AI summarizer filters articles by relevance to the selected topics.
+
+| Topic | Description |
+|-------|-------------|
+| `llm` | Large language models |
+| `ai-safety` | AI safety and alignment |
+| `ai-agents` | Autonomous AI agents |
+| `open-source` | Open-source AI models and tools |
+| `computer-vision` | Computer vision |
+| `robotics` | Robotics and embodied AI |
+| `ai-coding` | AI-assisted programming |
+| `ai-policy` | AI regulation and policy |
+| `industry` | AI industry news and business |
+| `research` | AI/ML research papers |
+
 ## Sources
 
-HuggingFace Blog, OpenAI Blog, Simon Willison, TechCrunch AI, MIT Technology Review, The Verge AI, Ars Technica, Hacker News Top Stories, arXiv (cs.AI, cs.CL, cs.LG)
+Articles are fetched from a mix of RSS feeds, APIs, and academic archives. Sources were selected based on: update frequency, content quality, and coverage across industry news, research, and independent commentary.
+
+### RSS Feeds
+
+| Source | URL |
+|--------|-----|
+| HuggingFace Blog | https://huggingface.co/blog/feed.xml |
+| OpenAI Blog | https://openai.com/blog/rss.xml |
+| Simon Willison | https://simonwillison.net/atom/everything/ |
+| TechCrunch AI | https://techcrunch.com/category/artificial-intelligence/feed/ |
+| MIT Technology Review | https://www.technologyreview.com/feed/ |
+| The Verge AI | https://www.theverge.com/rss/ai-artificial-intelligence/index.xml |
+| Ars Technica | https://feeds.arstechnica.com/arstechnica/technology-lab |
+
+### APIs
+
+| Source | Method |
+|--------|--------|
+| Hacker News | Firebase API, top 30 stories |
+| arXiv | API query, categories: `cs.AI`, `cs.LG`, `cs.CL` (20 papers each) |
+
+Users can also add up to 5 custom RSS feeds via `/sources add <url>`.
 
 ## Bot Commands
 
