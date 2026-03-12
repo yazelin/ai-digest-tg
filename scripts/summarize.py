@@ -59,17 +59,15 @@ def build_prompt(
     )
 
 
+_MAX_ARTICLES_FOR_PROMPT = 50
+
+
 def call_copilot_cli(prompt: str) -> str:
-    """Call GitHub Copilot CLI in non-interactive mode and return the response."""
+    """Call GitHub Copilot CLI via stdin pipe and return the response."""
     try:
         result = subprocess.run(
-            [
-                "copilot",
-                "--model", "gpt-5-mini",
-                "-p", prompt,
-                "-s",
-                "--no-color",
-            ],
+            ["copilot", "--model", "gpt-5-mini", "-s", "--no-color"],
+            input=prompt,
             capture_output=True,
             text=True,
             timeout=120,
@@ -128,6 +126,8 @@ def summarize_articles(
     style: str = "mixed",
 ) -> DigestResult:
     """Full summarization pipeline: build prompt -> call AI -> parse response."""
+    # Limit articles to avoid exceeding prompt size limits
+    articles = articles[:_MAX_ARTICLES_FOR_PROMPT]
     prompt = build_prompt(articles, topics=topics, lang=lang, style=style)
     response = call_copilot_cli(prompt)
     return parse_digest_response(response)
