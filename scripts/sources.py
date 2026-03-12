@@ -14,7 +14,6 @@ import requests
 DEFAULT_FEEDS: dict[str, str] = {
     "huggingface": "https://huggingface.co/blog/feed.xml",
     "openai": "https://openai.com/blog/rss.xml",
-    "anthropic": "https://www.anthropic.com/feed.xml",
     "simonw": "https://simonwillison.net/atom/everything/",
     "techcrunch-ai": "https://techcrunch.com/category/artificial-intelligence/feed/",
     "mit-tech-review": "https://www.technologyreview.com/feed/",
