@@ -122,6 +122,33 @@ main {
   margin-bottom: 8px;
 }
 
+.bot-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  margin: 16px 0 8px;
+  background: #2aabee;
+  color: #fff;
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(42, 171, 238, 0.25);
+}
+
+.bot-link:hover {
+  background: #40b9f5;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(42, 171, 238, 0.35);
+}
+
+.bot-link-icon {
+  font-size: 1.2rem;
+}
+
 .auth-note {
   background: var(--chip-bg);
   border: 1px solid var(--chip-border);
