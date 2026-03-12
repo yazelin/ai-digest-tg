@@ -60,7 +60,8 @@ export default {
       return handleWebhook(request, env);
     }
     if (url.pathname.startsWith("/api/")) {
-      return new Response("Not implemented", { status: 501 });
+      const { handleAPI } = await import("./api");
+      return handleAPI(request, env, url.pathname);
     }
     return new Response("AI Digest TG", { status: 200 });
   },
